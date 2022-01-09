@@ -8,7 +8,7 @@ package com.taobao.pamirs.schedule.taskmanager;
 public class ScheduleTaskItem {
 
     public enum TaskItemSts {
-        ACTIVTE, FINISH, HALT
+        ACTIVATE, FINISH, HALT
     }
 
     /**
@@ -24,7 +24,7 @@ public class ScheduleTaskItem {
     /**
      * 完成状态
      */
-    private TaskItemSts sts = TaskItemSts.ACTIVTE;
+    private TaskItemSts sts = TaskItemSts.ACTIVATE;
 
     /**
      * 任务处理需要的参数

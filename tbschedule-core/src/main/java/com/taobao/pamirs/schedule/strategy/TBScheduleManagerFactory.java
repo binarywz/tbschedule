@@ -54,6 +54,9 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     private IScheduleDataManager scheduleDataManager;
     private ScheduleStrategyDataManager4ZK scheduleStrategyManager;
 
+    /**
+     * 当前任务调度器(Factory)实例中Strategy关联的IStrategyTask列表
+     */
     private Map<String, List<IStrategyTask>> managerMap = new ConcurrentHashMap<>();
 
     private ApplicationContext applicationcontext;
@@ -100,7 +103,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
             if (this.zkManager != null) {
                 this.zkManager.close();
             }
-            this.zkManager = new ZKManager(p);
+            this.zkManager = new ZKManager(p); // 连接Zookeeper
             this.errorMessage = "Zookeeper connecting ......" + this.zkManager.getConnectStr();
             initialThread = new InitialThread(this);
             initialThread.setName("TBScheduleManagerFactory-initialThread");
@@ -160,6 +163,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
             ManagerFactoryInfo stsInfo = null;
             boolean isException = false;
             try {
+                // 获取任务管理器信息
                 stsInfo = this.getScheduleStrategyManager().loadManagerFactoryInfo(this.getUuid());
             } catch (Exception e) {
                 isException = true;
@@ -186,41 +190,83 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     }
 
     public void reRegisterManagerFactory() throws Exception {
-        // 重新分配调度器
+        /**
+         * 过滤当前任务调度器(Factory)实例不能处理的Strategy，并停掉正在运行的StrategyTask
+         */
         List<String> stopList = this.getScheduleStrategyManager().registerManagerFactory(this);
         for (String strategyName : stopList) {
             this.stopServer(strategyName);
         }
+        /**
+         * 重新分配调度任务
+         */
         this.assignScheduleServer();
+        /**
+         * 根据重新分配的Strategy配置调度任务
+         */
         this.reRunScheduleServer();
     }
 
     /**
-     * 根据策略重新分配调度任务的机器
+     * 根据配置重新分配调度任务
      */
     public void assignScheduleServer() throws Exception {
+        /**
+         * 遍历跟当前任务调度器(Factory)实例相关的Strategy
+         * 1.根据UUID查询本任务调度器(Factory)的所有相关Strategy配置
+         * 2.遍历Strategy配置，重新分配调度任务
+         */
         for (ScheduleStrategyRunntime run : this.scheduleStrategyManager
             .loadAllScheduleStrategyRunntimeByUUID(this.uuid)) {
+            /**
+             * 根据StrategyName获取FactoryList，Factory:调度服务器
+             *
+             * 1.Factory在启动的时候会检查自己能处理哪些Strategy，如果能处理
+             * 则在"/schedule/demo/SampleTask-strategy/"路径下注册自己
+             * 2.此处TaskType就是StrategyName: "SampleTask-strategy"
+             * 3.ScheduleStrategyRunntime可以理解为Strategy的运行信信息(个人理解)
+             */
             List<ScheduleStrategyRunntime> factoryList = this.scheduleStrategyManager
                 .loadAllScheduleStrategyRunntimeByTaskType(run.getStrategyName());
+            /**
+             * 判断是否为Strategy的leader任务调度器(Factory)，即每个Strategy配置只能由leader任务调度器修改
+             */
             if (factoryList.size() == 0 || this.isLeader(this.uuid, factoryList) == false) {
                 continue;
             }
+            /**
+             * 根据StrategyName获取ScheduleStrategy
+             */
             ScheduleStrategy scheduleStrategy = this.scheduleStrategyManager.loadStrategy(run.getStrategyName());
-
+            /**
+             * 分配factory任务数量: 计算分配到每一台server上的任务数量
+             * assignTaskNumber(int serverNum, int taskItemNum, int maxNumOfOneServer)
+             * int serverNum: 总的服务器数量
+             * int taskItemNum: 任务项数量
+             * int maxNumOfOneServer: 每个server最大任务项数目
+             */
             int[] nums = ScheduleUtil.assignTaskNumber(factoryList.size(), scheduleStrategy.getAssignNum(),
                 scheduleStrategy.getNumOfSingleServer());
             for (int i = 0; i < factoryList.size(); i++) {
                 ScheduleStrategyRunntime factory = factoryList.get(i);
-                // 更新请求的服务器数量
+                // 更新Factory的任务数量
                 this.scheduleStrategyManager
                     .updateStrategyRunntimeReqestNum(run.getStrategyName(), factory.getUuid(), nums[i]);
             }
         }
     }
 
+    /**
+     * 判断是否为leader
+     * @param uuid
+     * @param factoryList
+     * @return
+     */
     public boolean isLeader(String uuid, List<ScheduleStrategyRunntime> factoryList) {
         try {
+            /**
+             * 选举出每个Strategy的leader任务调度器(Factory)实例
+             */
             long no = Long.parseLong(uuid.substring(uuid.lastIndexOf("$") + 1));
             for (ScheduleStrategyRunntime server : factoryList) {
                 if (no > Long.parseLong(server.getUuid().substring(server.getUuid().lastIndexOf("$") + 1))) {
@@ -234,9 +280,19 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
         }
     }
 
+    /**
+     * 根据重新分配的Strategy配置调度任务
+     * @throws Exception
+     */
     public void reRunScheduleServer() throws Exception {
+        /**
+         * 遍历跟当前任务调度器(Factory)实例相关的Strategy
+         */
         for (ScheduleStrategyRunntime run : this.scheduleStrategyManager
             .loadAllScheduleStrategyRunntimeByUUID(this.uuid)) {
+            /**
+             * 获取当前任务调度器(Factory)实例中Strategy关联的IStrategyTask列表
+             */
             List<IStrategyTask> list = this.managerMap.get(run.getStrategyName());
             if (list == null) {
                 list = new ArrayList<>();
@@ -382,8 +438,8 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext aApplicationcontext) throws BeansException {
-        applicationcontext = aApplicationcontext;
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        applicationcontext = applicationContext;
     }
 
     public Object getBean(String beanName) {
@@ -451,6 +507,7 @@ class ManagerFactoryTimerTask extends java.util.TimerTask {
                 }
             } else {
                 count = 0;
+                // 刷新调度任务
                 this.factory.refresh();
             }
 
@@ -481,6 +538,9 @@ class InitialThread extends Thread {
         facotry.lock.lock();
         try {
             int count = 0;
+            /**
+             * 等待建立Zookeeper连接
+             */
             while (facotry.zkManager.checkZookeeperState() == false) {
                 count = count + 1;
                 if (count % 50 == 0) {

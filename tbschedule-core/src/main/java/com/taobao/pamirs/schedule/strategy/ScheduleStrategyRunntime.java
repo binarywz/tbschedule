@@ -2,6 +2,9 @@ package com.taobao.pamirs.schedule.strategy;
 
 import com.taobao.pamirs.schedule.strategy.ScheduleStrategy.Kind;
 
+/**
+ * Strategy信息
+ */
 public class ScheduleStrategyRunntime {
 
     /**

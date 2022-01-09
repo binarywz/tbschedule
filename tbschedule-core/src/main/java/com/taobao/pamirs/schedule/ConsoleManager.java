@@ -14,6 +14,9 @@ import com.taobao.pamirs.schedule.taskmanager.IScheduleDataManager;
 import com.taobao.pamirs.schedule.zk.ScheduleStrategyDataManager4ZK;
 import com.taobao.pamirs.schedule.zk.ZKManager;
 
+/**
+ * 控制台管理
+ */
 public class ConsoleManager {
 
     public static final String CONFIG_FILE = System.getProperty("user.dir") + File.separator

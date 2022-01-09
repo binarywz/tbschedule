@@ -19,7 +19,9 @@ import org.apache.zookeeper.ZooKeeper;
 public class ScheduleStrategyDataManager4ZK {
 
     private ZKManager zkManager;
+    // PATH_Strategy: "/schedule/demo/strategy"
     private String PATH_Strategy;
+    // PATH_ManagerFactory: "/schedule/demo/factory"
     private String PATH_ManagerFactory;
     private Gson gson;
 
@@ -224,6 +226,7 @@ public class ScheduleStrategyDataManager4ZK {
         List<ScheduleStrategyRunntime> result = new ArrayList<>();
         String zkPath = this.PATH_Strategy;
 
+        // 此处TaskType就是StrategyName: "SampleTask-strategy"
         List<String> taskTypeList = this.getZooKeeper().getChildren(zkPath, false);
         Collections.sort(taskTypeList);
         for (String taskType : taskTypeList) {
@@ -234,6 +237,12 @@ public class ScheduleStrategyDataManager4ZK {
         return result;
     }
 
+    /**
+     * 根据StrategyName获取所有有效的ScheduleStrategy
+     * @param strategyName
+     * @return
+     * @throws Exception
+     */
     public List<ScheduleStrategyRunntime> loadAllScheduleStrategyRunntimeByTaskType(String strategyName)
         throws Exception {
         List<ScheduleStrategyRunntime> result = new ArrayList<>();
@@ -257,18 +266,22 @@ public class ScheduleStrategyDataManager4ZK {
     }
 
     /**
-     * 更新请求数量
+     * 更新Factory的任务数量
+     * @param strategyName 策略名称
+     * @param factoryUUID 调度服务器(ManagerFactory)标识
+     * @param requestNum 任务数量
+     * @throws Exception
      */
-    public void updateStrategyRunntimeReqestNum(String strategyName, String manangerFactoryUUID, int requestNum)
+    public void updateStrategyRunntimeReqestNum(String strategyName, String factoryUUID, int requestNum)
         throws Exception {
-        String zkPath = this.PATH_Strategy + "/" + strategyName + "/" + manangerFactoryUUID;
+        String zkPath = this.PATH_Strategy + "/" + strategyName + "/" + factoryUUID;
         ScheduleStrategyRunntime result = null;
         if (this.getZooKeeper().exists(zkPath, false) != null) {
-            result = this.loadScheduleStrategyRunntime(strategyName, manangerFactoryUUID);
+            result = this.loadScheduleStrategyRunntime(strategyName, factoryUUID);
         } else {
             result = new ScheduleStrategyRunntime();
             result.setStrategyName(strategyName);
-            result.setUuid(manangerFactoryUUID);
+            result.setUuid(factoryUUID);
             result.setRequestNum(requestNum);
             result.setMessage("");
         }
@@ -305,6 +318,12 @@ public class ScheduleStrategyDataManager4ZK {
         this.getZooKeeper().setData(zkPath, Boolean.toString(isStart).getBytes(), -1);
     }
 
+    /**
+     * 查询任务管理器信息
+     * @param uuid
+     * @return
+     * @throws Exception
+     */
     public ManagerFactoryInfo loadManagerFactoryInfo(String uuid) throws Exception {
         String zkPath = this.PATH_ManagerFactory + "/" + uuid;
         if (this.getZooKeeper().exists(zkPath, false) == null) {

@@ -39,6 +39,9 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 调度中心客户端
+ */
 public class ScheduleDataManager4ZK implements IScheduleDataManager {
 
     private static transient Logger log = LoggerFactory.getLogger(ScheduleDataManager4ZK.class);
@@ -213,7 +216,7 @@ public class ScheduleDataManager4ZK implements IScheduleDataManager {
             } else {
                 taskItems[i].setTaskItem(baseTaskItems[i]);
             }
-            taskItems[i].setSts(ScheduleTaskItem.TaskItemSts.ACTIVTE);
+            taskItems[i].setSts(ScheduleTaskItem.TaskItemSts.ACTIVATE);
         }
         createScheduleTaskItem(taskItems);
     }

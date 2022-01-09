@@ -19,6 +19,9 @@ import org.apache.zookeeper.server.auth.DigestAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Zookeeper管理类
+ */
 public class ZKManager {
 
     private static transient Logger log = LoggerFactory.getLogger(ZKManager.class);
@@ -53,13 +56,18 @@ public class ZKManager {
         connectionLatch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * 创建与Zookeeper的连接
+     * @param connectionLatch
+     * @throws Exception
+     */
     private void createZookeeper(final CountDownLatch connectionLatch) throws Exception {
         zk = new ZooKeeper(this.properties.getProperty(keys.zkConnectString.toString()),
             Integer.parseInt(this.properties.getProperty(keys.zkSessionTimeout.toString())),
             new Watcher() {
                 @Override
                 public void process(WatchedEvent event) {
-                    sessionEvent(connectionLatch, event);
+                    sessionEvent(connectionLatch, event); // 处理Zookeeper连接会话事件
                 }
             });
         String authString = this.properties.getProperty(keys.userName.toString()) + ":" + this.properties

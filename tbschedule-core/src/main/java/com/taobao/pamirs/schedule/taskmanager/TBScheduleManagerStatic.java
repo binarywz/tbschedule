@@ -25,12 +25,17 @@ public class TBScheduleManagerStatic extends TBScheduleManager {
         super(aFactory, baseTaskType, ownSign, aScheduleCenter);
     }
 
+    /**
+     *
+     * @throws Exception
+     */
     public void initialRunningInfo() throws Exception {
+        // 清除过期的ScheduleServer
         scheduleCenter.clearExpireScheduleServer(this.currenScheduleServer.getTaskType(),
             this.taskTypeInfo.getJudgeDeadInterval());
         List<String> list = scheduleCenter.loadScheduleServerNames(this.currenScheduleServer.getTaskType());
         if (scheduleCenter.isLeader(this.currenScheduleServer.getUuid(), list)) {
-            // 是第一次启动，先清楚所有的垃圾数据
+            // 是第一次启动，先清除所有的垃圾数据
             log.debug(this.currenScheduleServer.getUuid() + ":" + list.size());
             this.scheduleCenter.initialRunningInfo4Static(this.currenScheduleServer.getBaseTaskType(),
                 this.currenScheduleServer.getOwnSign(), this.currenScheduleServer.getUuid());
@@ -105,6 +110,7 @@ public class TBScheduleManagerStatic extends TBScheduleManager {
     @Override
     public void refreshScheduleServerInfo() throws Exception {
         try {
+            // 在"/server"下更新任务调度服务器的心跳时间，调度信息
             rewriteScheduleInfo();
             // 如果任务信息没有初始化成功，不做任务相关的处理
             if (this.isRuntimeInfoInitial == false) {

@@ -118,8 +118,10 @@ abstract class TBScheduleManager implements IStrategyTask {
                     + ",HeartBeatRate = "
                     + this.taskTypeInfo.getHeartBeatRate());
         }
+        // 生成ScheduleServer信息
         this.currenScheduleServer = ScheduleServer
             .createScheduleServer(this.scheduleCenter, baseTaskType, ownSign, this.taskTypeInfo.getThreadNumber());
+        // 设置ScheduleServer的ManagerFactoryUUID
         this.currenScheduleServer.setManagerFactoryUUID(this.factory.getUuid());
         scheduleCenter.registerScheduleServer(this.currenScheduleServer);
         this.mBeanName = "pamirs:name=" + "schedule.ServerMananger." + this.currenScheduleServer.getUuid();
@@ -391,6 +393,12 @@ abstract class TBScheduleManager implements IStrategyTask {
     }
 }
 
+/**
+ * 心跳调度器
+ * 1.更新/server目录下对应的调度管理器心跳信息
+ * 2.清除过期的ScheduleServer
+ * 3.如果是leader则进行任务项的分配
+ */
 class HeartBeatTimerTask extends java.util.TimerTask {
 
     private static transient Logger log = LoggerFactory.getLogger(HeartBeatTimerTask.class);

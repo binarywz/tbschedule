@@ -80,6 +80,7 @@ class TBScheduleProcessorSleep<T> implements IScheduleProcessor, Runnable {
         if (taskTypeInfo.getFetchDataNumber() < taskTypeInfo.getThreadNumber() * 10) {
             logger.warn("参数设置不合理，系统性能不佳。【每次从数据库获取的数量fetchnum】 >= 【线程数量threadnum】 *【最少循环次数10】 ");
         }
+        // 在初始化执行处理器时，会启动threadNumber个线程数
         for (int i = 0; i < taskTypeInfo.getThreadNumber(); i++) {
             this.startThread(i);
         }
@@ -193,6 +194,10 @@ class TBScheduleProcessorSleep<T> implements IScheduleProcessor, Runnable {
         return 0;
     }
 
+    /**
+     * 执行线程的职责主要是执行自定义的IScheduleTaskDealSingle,而IScheduleTaskMulti可以实现批量处理，核心思想为:
+     * 1.对开始执行的线程计数+1，在没有停止调度的前提下即resume状态下，执行客户端自定义ScheduleTask的execute()方法，并完成统计。
+     */
     @Override
     @SuppressWarnings({"rawtypes", "unchecked", "static-access"})
     public void run() {

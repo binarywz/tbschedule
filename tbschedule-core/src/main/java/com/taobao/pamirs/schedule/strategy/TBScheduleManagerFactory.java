@@ -55,7 +55,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     private ScheduleStrategyDataManager4ZK scheduleStrategyManager;
 
     /**
-     * 当前任务调度器(Factory)实例中Strategy关联的IStrategyTask列表
+     * 当前任务调度服务器(Factory)实例中Strategy关联的IStrategyTask列表
      */
     private Map<String, List<IStrategyTask>> managerMap = new ConcurrentHashMap<>();
 
@@ -117,16 +117,32 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
      * 在Zk状态正常后回调数据初始化
      */
     public void initialData() throws Exception {
+        /**
+         * 递归创建永久根节点"/schedule/demo"，并写入版本信息
+         */
         this.zkManager.initial();
+        /**
+         * 创建永久子节点"/schedule/demo/baseTaskType"
+         */
         this.scheduleDataManager = new ScheduleDataManager4ZK(this.zkManager);
+        /**
+         * 创建永久子节点"/schedule/demo/strategy"和"/schedule/demo/factory"
+         */
         this.scheduleStrategyManager = new ScheduleStrategyDataManager4ZK(this.zkManager);
         if (this.start == true) {
-            // 注册调度管理器
+            /**
+             * 注册调度管理器
+             * 创建临时顺序子节点，节点表示主机的注册信息
+             */
             this.scheduleStrategyManager.registerManagerFactory(this);
             if (timer == null) {
                 timer = new Timer("TBScheduleManagerFactory-Timer");
             }
             if (timerTask == null) {
+                /**
+                 * 启动一个定时器检测Zookeeper状态
+                 * 如果连接失败，停止所有任务后，重新连接Zookeeper服务器
+                 */
                 timerTask = new ManagerFactoryTimerTask(this);
                 timer.schedule(timerTask, 2000, this.timerInterval);
             }
@@ -191,7 +207,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
 
     public void reRegisterManagerFactory() throws Exception {
         /**
-         * 过滤当前任务调度器(Factory)实例不能处理的Strategy，并停掉正在运行的StrategyTask
+         * 过滤当前任务调度服务器(Factory)实例不能处理的Strategy，并停掉正在运行的StrategyTask
          */
         List<String> stopList = this.getScheduleStrategyManager().registerManagerFactory(this);
         for (String strategyName : stopList) {
@@ -212,8 +228,8 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
      */
     public void assignScheduleServer() throws Exception {
         /**
-         * 遍历跟当前任务调度器(Factory)实例相关的Strategy
-         * 1.根据UUID查询本任务调度器(Factory)的所有相关Strategy配置
+         * 遍历跟当前任务调度服务器(Factory)实例相关的Strategy
+         * 1.根据UUID查询本任务调度服务器(Factory)的所有相关Strategy配置
          * 2.遍历Strategy配置，重新分配调度任务
          */
         for (ScheduleStrategyRunntime run : this.scheduleStrategyManager
@@ -229,7 +245,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
             List<ScheduleStrategyRunntime> factoryList = this.scheduleStrategyManager
                 .loadAllScheduleStrategyRunntimeByTaskType(run.getStrategyName());
             /**
-             * 判断是否为Strategy的leader任务调度器(Factory)，即每个Strategy配置只能由leader任务调度器修改
+             * 判断是否为Strategy的leader任务调度服务器(Factory)，即每个Strategy配置只能由leader任务调度服务器修改
              */
             if (factoryList.size() == 0 || this.isLeader(this.uuid, factoryList) == false) {
                 continue;
@@ -265,7 +281,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     public boolean isLeader(String uuid, List<ScheduleStrategyRunntime> factoryList) {
         try {
             /**
-             * 选举出每个Strategy的leader任务调度器(Factory)实例
+             * 选举出每个Strategy的leader任务调度服务器(Factory)实例
              */
             long no = Long.parseLong(uuid.substring(uuid.lastIndexOf("$") + 1));
             for (ScheduleStrategyRunntime server : factoryList) {
@@ -286,12 +302,12 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
      */
     public void reRunScheduleServer() throws Exception {
         /**
-         * 遍历跟当前任务调度器(Factory)实例相关的Strategy
+         * 遍历跟当前任务调度服务器(Factory)实例相关的Strategy
          */
         for (ScheduleStrategyRunntime run : this.scheduleStrategyManager
             .loadAllScheduleStrategyRunntimeByUUID(this.uuid)) {
             /**
-             * 获取当前任务调度器(Factory)实例中Strategy关联的IStrategyTask列表
+             * 获取当前任务调度服务器(Factory)实例中Strategy关联的IStrategyTask列表
              */
             List<IStrategyTask> list = this.managerMap.get(run.getStrategyName());
             if (list == null) {

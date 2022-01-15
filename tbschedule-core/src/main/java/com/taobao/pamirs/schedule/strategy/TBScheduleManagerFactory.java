@@ -76,6 +76,11 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
         this.hostName = ScheduleUtil.getLocalHostName();
     }
 
+    /**
+     * 将配置参数封装到Properties对象后开始初始化，
+     * 连接Zookeeper并启动一个新的线程(initialThread)进行节点数据处理
+     * @throws Exception
+     */
     public void init() throws Exception {
         Properties properties = new Properties();
         for (Map.Entry<String, String> e : this.zkConfig.entrySet()) {
@@ -114,7 +119,7 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     }
 
     /**
-     * 在Zk状态正常后回调数据初始化
+     * 连接Zookeeper之后进行数据初始化
      */
     public void initialData() throws Exception {
         /**
@@ -150,11 +155,14 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
     }
 
     /**
-     * 创建调度服务器
+     * 创建任务管理器
      */
     public IStrategyTask createStrategyTask(ScheduleStrategy strategy) {
         IStrategyTask result = null;
         try {
+            /**
+             * 根据调度类型实例化不同的任务管理器
+             */
             if (ScheduleStrategy.Kind.Schedule == strategy.getKind()) {
                 String baseTaskType = ScheduleUtil.splitBaseTaskTypeFromTaskType(strategy.getTaskName());
                 String ownSign = ScheduleUtil.splitOwnsignFromTaskType(strategy.getTaskName());

@@ -118,16 +118,30 @@ abstract class TBScheduleManager implements IStrategyTask {
                     + ",HeartBeatRate = "
                     + this.taskTypeInfo.getHeartBeatRate());
         }
-        // 生成ScheduleServer信息
+        /**
+         * 配置ScheduleServer信息
+         */
         this.currenScheduleServer = ScheduleServer
             .createScheduleServer(this.scheduleCenter, baseTaskType, ownSign, this.taskTypeInfo.getThreadNumber());
-        // 设置ScheduleServer的ManagerFactoryUUID
+        /**
+         * 设置ScheduleServer的ManagerFactoryUUID
+         */
         this.currenScheduleServer.setManagerFactoryUUID(this.factory.getUuid());
+        /**
+         * 注册ScheduleServer到调度中心
+         * 在"/schedule/demo/baseTaskType/SampleTask/SampleTask/server"下注册ScheduleServer信息
+         * 可以看将/server目录下的每一个子节点看作一个任务调度管理器
+         */
         scheduleCenter.registerScheduleServer(this.currenScheduleServer);
         this.mBeanName = "pamirs:name=" + "schedule.ServerMananger." + this.currenScheduleServer.getUuid();
 
         String heartBeatTask = this.currenScheduleServer.getTaskType() + "-" + this.currentSerialNumber + "-HeartBeat";
         this.heartBeatTimer = new Timer(heartBeatTask);
+        /**
+         * 启动心跳TimerHearBeatTimerTask
+         * 主要工作: 重新将taskItem分配到每个ScheduleServer,TBScheduleManagerStatic#assignScheduleTask()
+         * 遍历当前ScheduleServer对应的task对应的所有ScheduleServer实例，选举出一个leader，由leader进行分配工作
+         */
         this.heartBeatTimer.schedule(new HeartBeatTimerTask(this), new java.util.Date(System.currentTimeMillis() + 500),
             this.taskTypeInfo.getHeartBeatRate());
         initial();

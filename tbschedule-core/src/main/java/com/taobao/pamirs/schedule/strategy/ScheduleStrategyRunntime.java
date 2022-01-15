@@ -27,6 +27,7 @@ public class ScheduleStrategyRunntime {
      * 需要的任务数量
      */
     int requestNum;
+
     /**
      * 当前的任务数量
      */

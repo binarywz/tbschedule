@@ -17,6 +17,7 @@ public class ScheduleServer {
      * 全局唯一编号
      */
     private String uuid;
+
     private long id;
     /**
      * 任务类型
@@ -28,7 +29,12 @@ public class ScheduleServer {
      */
     private String baseTaskType;
 
+    /**
+     * 环境标识
+     * 对运行环境进行区分,进行调度任务和数据隔离,例如:开发环境、测试环境、预发环境、生产环境
+     */
     private String ownSign;
+
     /**
      * 机器IP地址
      */
@@ -43,18 +49,22 @@ public class ScheduleServer {
      * 数据处理线程数量
      */
     private int threadNum;
+
     /**
      * 服务开始时间
      */
     private Timestamp registerTime;
+
     /**
      * 最后一次心跳通知时间
      */
     private Timestamp heartBeatTime;
+
     /**
      * 最后一次取数据时间
      */
     private Timestamp lastFetchDataTime;
+
     /**
      * 处理描述信息，例如读取的任务数量，处理成功的任务数量，处理失败的数量，处理耗时 FetchDataCount=4430,FetcheDataNum= 438570,DealDataSucess=438570,DealDataFail=0,DealSpendTime=651066
      */

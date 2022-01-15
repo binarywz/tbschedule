@@ -2,6 +2,10 @@ package com.taobao.pamirs.schedule.strategy;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+/**
+ * 调度策略
+ * 一个任务在调度集群中的分配策略
+ */
 public class ScheduleStrategy {
 
     public enum Kind {
@@ -13,9 +17,13 @@ public class ScheduleStrategy {
      */
     private String strategyName;
 
+    /**
+     * 任务的执行机器IP列表,127.0.0.1表示所有机器上都可以运行
+     */
     private String[] IPList;
 
     private int numOfSingleServer;
+
     /**
      * 指定需要执行调度的机器数量
      */

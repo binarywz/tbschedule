@@ -26,22 +26,30 @@ public class TBScheduleManagerStatic extends TBScheduleManager {
     }
 
     /**
-     *
+     * 初始化运行信息
+     * 由当前task的leader ScheduleServer实例初始化这个task下所有的taskItem子节点的数据
      * @throws Exception
      */
     public void initialRunningInfo() throws Exception {
-        // 清除过期的ScheduleServer
+        /**
+         * 清除过期的ScheduleServer
+         */
         scheduleCenter.clearExpireScheduleServer(this.currenScheduleServer.getTaskType(),
             this.taskTypeInfo.getJudgeDeadInterval());
         List<String> list = scheduleCenter.loadScheduleServerNames(this.currenScheduleServer.getTaskType());
         if (scheduleCenter.isLeader(this.currenScheduleServer.getUuid(), list)) {
-            // 是第一次启动，先清除所有的垃圾数据
+            /**
+             * 第一次启动，清除所有的垃圾数据
+             */
             log.debug(this.currenScheduleServer.getUuid() + ":" + list.size());
             this.scheduleCenter.initialRunningInfo4Static(this.currenScheduleServer.getBaseTaskType(),
                 this.currenScheduleServer.getOwnSign(), this.currenScheduleServer.getUuid());
         }
     }
 
+    /**
+     *
+     */
     @Override
     public void initial() {
         new Thread(this.currenScheduleServer.getTaskType() + "-" + this.currentSerialNumber + "-StartProcess") {
@@ -106,6 +114,12 @@ public class TBScheduleManagerStatic extends TBScheduleManager {
     /**
      * 定时向数据配置中心更新当前服务器的心跳信息。 如果发现本次更新的时间如果已经超过了，
      * 服务器死亡的心跳周期，则不能在向服务器更新信息。 而应该当作新的服务器，进行重新注册。
+     *
+     * HeartBeatTimerTask调用
+     * 主要做的事情就是重新将taskItem分配到每个ScheduleServer
+     * 1.等待初始化线程完成initialRunningInfo的工作
+     * 2.clearTaskItem，遍历所有taskItem，查看对应的cur_server是否还能找到，找不到则将cur_server置为null
+     * 3.assignTaskItem，给每个taskItem分配合适的ScheduleServer实例
      */
     @Override
     public void refreshScheduleServerInfo() throws Exception {

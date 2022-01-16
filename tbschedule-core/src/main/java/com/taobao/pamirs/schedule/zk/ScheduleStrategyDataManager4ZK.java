@@ -141,7 +141,9 @@ public class ScheduleStrategyDataManager4ZK {
                 for (String ip : scheduleStrategy.getIPList()) {
                     if (ip.equals("127.0.0.1") || ip.equalsIgnoreCase("localhost") || ip.equals(managerFactory.getIp())
                         || ip.equalsIgnoreCase(managerFactory.getHostName())) {
-                        // 添加可管理TaskType
+                        /**
+                         * 在"/strategy/SampleTask-strategy"节点下创建表示调度服务器的临时顺序子节点
+                         */
                         String zkPath =
                             this.PATH_Strategy + "/" + scheduleStrategy.getStrategyName() + "/" + managerFactory
                                 .getUuid();

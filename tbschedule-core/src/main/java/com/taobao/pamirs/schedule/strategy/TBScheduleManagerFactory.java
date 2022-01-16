@@ -213,9 +213,20 @@ public class TBScheduleManagerFactory implements ApplicationContextAware {
         }
     }
 
+    /**
+     * 定时刷新集群中的任务调度器信息
+     * 1.根据UUID查找"/factory"节点下对应的任务调度器，并根据"/strategy"节点下的IP数组，确定此任务调度器可管理的策略节点，
+     * 并在策略节点"/strategy/strategyName"下创建"/IP+$+HostName+$+UUID+$Sequence"节点
+     * 2.筛选出不可管理的调度策略类型名称，并停止对应的任务处理器
+     * 3.根据策略重新分配任务调度机器的任务数，并由strategyName策略下的leader任务调度器更新该策略下的所有任务调度服务器调度信息，
+     * 即更新"/strategy/strategyName/IP+$+HostName+$+UUID+$Sequence"节点的数据
+     * 4.策略(strategyName)下的任务调度器由"/strategy/strategyName/IP+$+HostName+$+UUID+$Sequence"唯一标识
+     * 5.一个策略(strategyName)对应该调度服务器多个IStrategyTask任务处理器，一个taskItem对应一个任务处理器
+     * @throws Exception
+     */
     public void reRegisterManagerFactory() throws Exception {
         /**
-         * 过滤当前任务调度服务器(Factory)实例不能处理的Strategy，并停掉正在运行的StrategyTask
+         * 筛选当前任务调度服务器(Factory)实例不能处理的Strategy，并停掉正在运行的StrategyTask
          */
         List<String> stopList = this.getScheduleStrategyManager().registerManagerFactory(this);
         for (String strategyName : stopList) {
